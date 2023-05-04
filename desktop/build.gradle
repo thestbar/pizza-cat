@@ -1,0 +1,107 @@
+sourceCompatibility = 1.8
+sourceSets.main.java.srcDirs = [ "src/" ]
+sourceSets.main.resources.srcDirs = ["../assets"]
+
+project.ext.mainClassName = "com.junkiedan.ludumdare53.DesktopLauncher"
+project.ext.assetsDir = new File("../assets")
+
+
+import org.gradle.internal.os.OperatingSystem
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+
+    if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
+        // Required to run on macOS
+        jvmArgs += "-XstartOnFirstThread"
+    }
+}
+
+task debug(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+    debug = true
+}
+
+task dist(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+}
+
+//task javaPackager(type: Exec, dependsOn: dist) {
+//    workingDir project.projectDir
+//    def commands = [
+//            'javapackager',
+//            '-deploy',
+//            '-nosign',
+//            '-outdir', "${buildDir}/distribution",
+//            '-srcdir', "${buildDir}/libs",
+//            '-native', 'image',
+//            '-name', project.appName,
+//            '-appClass', project.mainClassName
+//    ]
+//
+//    def osName = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+//    if(osName.contains('windows')) {
+//
+//    }
+//    else if(osName.contains('linux')) {
+//
+//    }
+//    else if(osName.contains('mac')) {
+//        commands << "-BjvmOptions=-XstartOnFirstThread"
+//    }
+//
+//    commandLine = commands
+//}
+//
+//task cleanPackageRuntime(dependsOn: javaPackager) {
+//    doLast() {
+//        File runtimeFile = new File("${buildDir}/distribution/${project.appName}/runtime")
+//        runtimeFile.deleteDir()
+//        println("Deleting bloated runtime in " + runtimeFile)
+//    }
+//}
+//
+//task createFinalAppBundle(type: Exec, dependsOn: [cleanPackageRuntime]) {
+//    def jdk = System.getProperty("java.home")
+//
+//    workingDir project.projectDir
+//    commandLine = [
+//            'jLink',
+//            '-p', "${jdk}/jmods",
+//            '-add-modules', 'java.base,java.desktop,jdk.unsupported',
+//            '--strip-debug',
+//            '--no-header-files',
+//            '--no-man-pages',
+//            '--strip-native-commands',
+//            '--vm-server',
+//            '--compress=2',
+//            '--output', "${buildDir}/distribution/${project.appName}/runtime"
+//    ]
+//
+//    doLast {
+//        println("Application '${project.name}' packaged.")
+//        println(" -> Location: ${buildDir}/distribution/${project.name}/")
+//    }
+//}
+
+
+
+dist.dependsOn classes
+
+eclipse.project.name = appName + "-desktop"
